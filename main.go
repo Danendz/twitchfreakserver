@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gofiber/fiber/v2"
 	"io"
 	"log"
 	"os"
+	"twitchfreakserver/entities"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
@@ -15,16 +17,12 @@ func main() {
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			config := map[string]map[string]string{
-				"paths": {
-					"data": "./data",
-				},
-			}
-			file, _ := json.MarshalIndent(config, "", "")
-			if err := os.WriteFile("config.json", file, 0644); err != nil {
+			if err:=entities.NewConfig(); err != nil {
 				log.Fatal(err)
 			}
 		}
+	} else {
+		entities.SetConfigFromFile(configFile)
 	}
 
 	defer configFile.Close()
@@ -51,14 +49,7 @@ func main() {
 	})
 
 	app.Get("/config", func(c *fiber.Ctx) error {
-		byteValue, _ := io.ReadAll(configFile)
-
-		var result map[string]interface{}
-		if err := json.Unmarshal([]byte(byteValue), &result); err != nil {
-			return c.SendString("error")
-		}
-
-		return c.JSON(result)
+		return c.JSON(entities.GlobalConfig)
 	})
 
 	err = app.Listen(":3000")
